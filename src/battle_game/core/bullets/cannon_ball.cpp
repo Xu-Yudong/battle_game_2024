@@ -24,12 +24,59 @@ void CannonBall::Render() {
 }
 
 void CannonBall::Update() {
-  position_ += velocity_ * kSecondPerTick;
   bool should_die = false;
-  if (game_core_->IsBlockedByObstacles(position_)) {
-    should_die = true;
+  for (int updaten = 0; updaten < 10; updaten++) {
+    if (game_core_->IsBlockedByObstacles(position_ +
+                                         velocity_ * (kSecondPerTick / 10))) {
+      float x1 = 0.0;
+      glm::vec2 vposition = position_ + Rotate({0.0f, 2.05f * kSecondPerTick},
+                                               glm::radians(0.0f));
+      bool vdie = game_core_->IsBlockedByObstacles(vposition);
+      for (float x = 1.0; x < 360.0; x += 1.0) {
+        glm::vec2 vpositionx =
+            position_ + Rotate({0.0f, 2.05f * kSecondPerTick}, glm::radians(x));
+        if (game_core_->IsBlockedByObstacles(vpositionx) != vdie) {
+          x1 = x;
+          vdie = game_core_->IsBlockedByObstacles(vpositionx);
+          break;
+        }
+      }
+      for (float x = x1; x < 360.0 + x1; x += 1.0) {
+        glm::vec2 vpositionx =
+            position_ + Rotate({0.0f, 2.05f * kSecondPerTick}, glm::radians(x));
+        if (game_core_->IsBlockedByObstacles(vpositionx) != vdie) {
+          glm::vec2 vtangent =
+              Rotate({0.0f, 2.05f * kSecondPerTick}, glm::radians(x1)) -
+              Rotate({0.0f, 2.05f * kSecondPerTick}, glm::radians(x - 1.0f));
+          glm::vec2 tangent = {
+              vtangent.x /
+                  std::sqrt(vtangent.x * vtangent.x + vtangent.y * vtangent.y),
+              vtangent.y /
+                  std::sqrt(vtangent.x * vtangent.x +
+                            vtangent.y *
+                                vtangent.y)};  // Find the normalized tangent
+                                               // of the obstacle
+          velocity_ = {
+              -velocity_.x +
+                  2 * (velocity_.x * tangent.x + velocity_.y * tangent.y) *
+                      tangent.x,
+              -velocity_.y +
+                  2 * (velocity_.x * tangent.x + velocity_.y * tangent.y) *
+                      tangent.y,
+          };  // Rebound
+          reboundn--;
+          if (!reboundn) {
+            should_die = true;
+          }
+          break;
+        }
+        if (should_die) {
+          break;
+        }
+      }
+    }
+    position_ += velocity_ * (kSecondPerTick / 10);
   }
-
   auto &units = game_core_->GetUnits();
   for (auto &unit : units) {
     if (unit.first == unit_id_) {
