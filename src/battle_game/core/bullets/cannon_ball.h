@@ -18,5 +18,6 @@ class CannonBall : public Bullet {
 
  private:
   glm::vec2 velocity_{};
+  int reboundn = 4;
 };
 }  // namespace battle_game::bullet
